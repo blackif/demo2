@@ -1,0 +1,10 @@
+@EndUserText.label: 'Customer Master'
+@Analytics.dataExtraction.enabled: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@VDM.viewType: #BASIC
+define view entity ZI_FI_Customer
+  as select from I_Customer
+{
+  key Customer,
+      CustomerName
+}
