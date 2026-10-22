@@ -1,0 +1,13 @@
+*&---------------------------------------------------------------------*
+*& Include zfi0001_001_01
+*&---------------------------------------------------------------------*
+" Equipment Accounts Payable Control Account Substitution
+TRY.
+    zclfi0001_001_01=>z_fi_process_00001120(
+      EXPORTING account_doc_header = t_bkpf[]
+                account_doc_item   = CORRESPONDING #( t_bseg[] )
+      CHANGING  bseg_subst         = t_bsegsub[] ).
+
+  CATCH cx_sy_arithmetic_overflow INTO FINAL(arithmetic_overflow).
+    RAISE SHORTDUMP arithmetic_overflow.
+ENDTRY.
