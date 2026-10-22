@@ -1,0 +1,484 @@
+{
+  "schemaVersion": "1.0.0",
+  "meta": {
+    "package": "zfidemo_0001",
+    "packagePath": "sap/zpack/zfidemo_0001",
+    "template": "sap/document/template/readme_ja.md",
+    "language": "ja"
+  },
+  "files": [
+    {
+      "path": "z_fi_process_00001120",
+      "objectName": "Z_FI_PROCESS_00001120",
+      "objectType": "function_module",
+      "status": "confirmed",
+      "role": "会計伝票置換処理の入口となる Function Module。"
+    },
+    {
+      "path": "zabseg_subst1",
+      "objectName": "ZABSEG_SUBST1",
+      "objectType": "append_structure",
+      "status": "confirmed",
+      "role": "BSEG_SUBST に HKONT 項目を追加する拡張定義。"
+    },
+    {
+      "path": "zclfi0001_001_01",
+      "objectName": "ZCLFI0001_001_01",
+      "objectType": "class",
+      "status": "confirmed",
+      "role": "設定と指図を参照し、条件に応じて仕入先明細の HKONT を置換する。"
+    },
+    {
+      "path": "zfi0001_001_01",
+      "objectName": "ZFI0001_001_01",
+      "objectType": "include",
+      "status": "confirmed",
+      "role": "処理クラスを呼び出し、算術オーバーフローを SHORTDUMP にする。"
+    }
+  ],
+  "fields": [
+    {
+      "field": "## 業務要件",
+      "status": "unknown",
+      "reason": "ソースコード内に業務目的・背景・期待結果の明示的な記述がなく、処理内容から業務要件を推測しないため。"
+    },
+    {
+      "field": "## 機能要件",
+      "status": "confirmed"
+    },
+    {
+      "field": "## 業務フロー",
+      "status": "unknown",
+      "reason": "Function Module の呼出元やユーザ操作・起動契機がプログラムパッケージ内のファイルから確認できないため。"
+    },
+    {
+      "field": "## 処理概要",
+      "status": "confirmed"
+    },
+    {
+      "field": "### 1. 機能概要",
+      "status": "confirmed"
+    },
+    {
+      "field": "### 2. 処理詳細",
+      "status": "confirmed"
+    },
+    {
+      "field": "### 3. 処理条件",
+      "status": "confirmed"
+    },
+    {
+      "field": "### 4. 処理概要図",
+      "status": "confirmed"
+    },
+    {
+      "field": "### **前提条件：**",
+      "status": "confirmed"
+    },
+    {
+      "field": "### **制約条件：**",
+      "status": "confirmed"
+    },
+    {
+      "field": "## 依存関係",
+      "status": "confirmed"
+    },
+    {
+      "field": "### 使用公開API",
+      "status": "confirmed"
+    },
+    {
+      "field": "### **メッセージ**",
+      "status": "confirmed"
+    },
+    {
+      "field": "### データモデル・項目情報",
+      "status": "confirmed"
+    },
+    {
+      "field": "### 例外処理",
+      "status": "confirmed"
+    },
+    {
+      "field": "# テスト仕様書",
+      "status": "confirmed"
+    }
+  ],
+  "content": {
+    "businessRequirement": null,
+    "functionalRequirement": [
+      "入力：Function Module Z_FI_PROCESS_00001120 は会計伝票ヘッダ（T_BKPF）、明細（T_BSEG）、置換用明細（T_BSEGSUB）等を受け取る。クラスメソッドは会計伝票ヘッダと明細を入力し、BSEG_SUBST を変更する。",
+      "出力：条件を満たす仕入先明細の HKONT を、設定 Z_FI_PROCESS_00001120_HKONT の LOW 値に置換する。条件を満たさない場合、または必要設定・対象指図がない場合は置換処理を行わず戻る。",
+      "処理条件：設定 Z_FI_PROCESS_00001120_BLART（対象伝票タイプ）、Z_FI_PROCESS_00001120_AUART（対象投資指図タイプ）、Z_FI_PROCESS_00001120_HKONT（買掛金勘定）を取得し、すべて有効な場合に処理する。対象伝票の前渡金明細（BUZID = 'W'）について、投資指図分金額が非投資指図分金額以上の場合に置換する。",
+      "機能上の制約：パッケージ内のソースから確認できる処理のみを記載する。SAP システム上のカスタマイズ値や実行結果は確認していない。"
+    ],
+    "businessFlow": null,
+    "processSummary": [
+      "Function Module Z_FI_PROCESS_00001120 から Include ZFI0001_001_01 を通じてクラス ZCLFI0001_001_01 の静的メソッドを呼び出し、会計伝票の買掛金勘定置換を行う。",
+      "メソッドは TVARVC 互換 CDS ビュー ZC_XA_TVARVC から対象伝票タイプ・投資指図タイプ・買掛金勘定の設定を読み込む。設定不足、対象投資指図なし、または対象指図キーなしの場合は処理を終了する。",
+      "対象伝票の前渡金明細を投資指図・非投資指図に分類して金額を集計し、投資指図分が非投資指図分以上のとき、同一伝票の仕入先明細の HKONT を設定済み買掛金勘定に置換する。算術オーバーフローは例外として呼出元に伝播し、Include で SHORTDUMP となる。"
+    ],
+    "functionOverview": {
+      "functionName": "Equipment Accounts Payable Control Account Substitution（コードコメント）",
+      "processingMethod": "Function Module から Include を介して呼び出す ABAP クラスの静的メソッド",
+      "processingSummary": "設定された伝票タイプ・投資指図タイプ・買掛金勘定を使用し、前渡金明細の投資指図金額を比較して仕入先明細の HKONT を置換する。"
+    },
+    "processSteps": [
+      {
+        "title": "Function Module から Include を呼び出す",
+        "details": [
+          "Z_FI_PROCESS_00001120 が ZFI0001_001_01 を INCLUDE する。",
+          "Include は T_BKPF、T_BSEG、T_BSEGSUB をクラスメソッドへ渡す。"
+        ]
+      },
+      {
+        "title": "設定情報を取得・判定する",
+        "details": [
+          "ZC_XA_TVARVC から BLART、AUART、HKONT に対応する設定を取得する。",
+          "設定が0件、または対象伝票タイプ範囲・投資指図タイプ範囲・買掛金勘定のいずれかが未設定の場合は戻る。"
+        ]
+      },
+      {
+        "title": "投資指図キーを作成し対象指図を取得する",
+        "details": [
+          "会計明細の AUFNR から重複を除いた指図キーを作成し、初期値を削除する。",
+          "指図キーが空、または I_ORDER から対象 OrderType の指図を取得できない場合は戻る。"
+        ]
+      },
+      {
+        "title": "対象伝票の前渡金明細を集計する",
+        "details": [
+          "伝票タイプが設定された対象範囲外の場合、その伝票をスキップする。",
+          "BUZID = 'W' の明細を対象に、I_ORDER に存在する指図の DMBTR を投資指図合計、それ以外を非投資指図合計に加算する。",
+          "金額加算で CX_SY_ARITHMETIC_OVERFLOW が発生した場合は例外を再送出する。"
+        ]
+      },
+      {
+        "title": "買掛金勘定を置換する",
+        "details": [
+          "投資指図合計が非投資指図合計より小さい場合は置換せず次の伝票へ進む。",
+          "条件を満たす場合、同一伝票の KOART = 'K' の明細を検索し、該当行があれば BSEG_SUBST-HKONT に設定済み買掛金勘定を設定する。",
+          "全伝票の処理後、更新した置換明細テーブルを BSEG_SUBST に戻す。"
+        ]
+      }
+    ],
+    "processConditions": [
+      {
+        "target": "設定取得結果",
+        "condition": "ZC_XA_TVARVC から対象設定が1件以上取得できる",
+        "onTrue": "設定値の編集を続行する",
+        "onFalse": "メソッドを終了する"
+      },
+      {
+        "target": "必須設定",
+        "condition": "BLART 範囲、AUART 範囲、HKONT がすべて設定済み",
+        "onTrue": "指図キーを作成する",
+        "onFalse": "メソッドを終了する"
+      },
+      {
+        "target": "指図キー",
+        "condition": "会計明細から作成した指図キーが空でない",
+        "onTrue": "I_ORDER から対象指図を取得する",
+        "onFalse": "メソッドを終了する"
+      },
+      {
+        "target": "対象指図取得",
+        "condition": "I_ORDER から対象 OrderType の指図が取得できる",
+        "onTrue": "会計伝票の処理を続ける",
+        "onFalse": "メソッドを終了する"
+      },
+      {
+        "target": "伝票タイプ",
+        "condition": "会計伝票ヘッダの BLART が設定範囲内",
+        "onTrue": "前渡金明細を集計する",
+        "onFalse": "当該伝票をスキップする"
+      },
+      {
+        "target": "前渡金明細",
+        "condition": "明細の BUZID が 'W' と一致する",
+        "onTrue": "指図の有無に応じて金額を集計する",
+        "onFalse": "集計対象にしない"
+      },
+      {
+        "target": "投資指図判定",
+        "condition": "明細 AUFNR が取得済み対象指図に存在する",
+        "onTrue": "DMBTR を投資指図合計に加算する",
+        "onFalse": "DMBTR を非投資指図合計に加算する"
+      },
+      {
+        "target": "金額比較",
+        "condition": "投資指図合計が非投資指図合計以上",
+        "onTrue": "仕入先明細の HKONT 置換を試みる",
+        "onFalse": "当該伝票をスキップする"
+      },
+      {
+        "target": "仕入先明細",
+        "condition": "同一伝票に KOART = 'K' の明細が存在する",
+        "onTrue": "該当行の HKONT を置換する",
+        "onFalse": "HKONT を変更しない"
+      },
+      {
+        "target": "金額加算",
+        "condition": "算術オーバーフローが発生する",
+        "onTrue": "CX_SY_ARITHMETIC_OVERFLOW を再送出し、Include で SHORTDUMP",
+        "onFalse": "集計を続ける"
+      }
+    ],
+    "flowchart": {
+      "mermaid": [
+        "flowchart TD",
+        "    A([開始]) --> B[設定 ZC_XA_TVARVC 取得]",
+        "    B --> C{設定レコードあり}",
+        "    C -- No --> Z([終了])",
+        "    C -- Yes --> D{必須設定がすべて存在}",
+        "    D -- No --> Z",
+        "    D -- Yes --> E[指図キー作成]",
+        "    E --> F{指図キーあり}",
+        "    F -- No --> Z",
+        "    F -- Yes --> G[I_ORDER から対象指図取得]",
+        "    G --> H{対象指図あり}",
+        "    H -- No --> Z",
+        "    H -- Yes --> I[対象伝票を順に処理]",
+        "    I --> J{伝票タイプが対象範囲内}",
+        "    J -- No --> N[次の伝票]",
+        "    J -- Yes --> K[前渡金明細の投資・非投資金額を集計]",
+        "    K --> L{投資金額が非投資金額以上}",
+        "    L -- No --> N",
+        "    L -- Yes --> M{仕入先明細あり}",
+        "    M -- Yes --> P[HKONT を設定値に置換]",
+        "    M -- No --> N",
+        "    P --> N",
+        "    N --> Q{未処理伝票あり}",
+        "    Q -- Yes --> I",
+        "    Q -- No --> R[BSEG_SUBST に結果を反映]",
+        "    R --> Z"
+      ]
+    },
+    "prerequisites": [
+      "設定情報：ZC_XA_TVARVC に対象伝票タイプ Z_FI_PROCESS_00001120_BLART、投資指図タイプ Z_FI_PROCESS_00001120_AUART、買掛金勘定 Z_FI_PROCESS_00001120_HKONT が必要。",
+      "入力データ：会計伝票ヘッダ、会計伝票明細および置換用明細テーブルが呼出元から渡される。",
+      "参照データ：I_ORDER に対象投資指図が登録されている必要がある。"
+    ],
+    "constraints": [
+      "処理対象：BLART が設定された対象伝票タイプ範囲内の会計伝票。",
+      "明細条件：金額集計対象は BUZID = 'W' の前渡金明細。",
+      "指図条件：AUFNR が I_ORDER から取得した対象投資指図に該当する場合に投資指図分として集計する。",
+      "置換条件：投資指図合計が非投資指図合計以上であり、同一伝票に KOART = 'K' の明細がある場合に HKONT を置換する。",
+      "設定不足、指図キーなし、対象指図取得結果0件の場合はメソッドを終了し、置換処理を行わない。",
+      "算術オーバーフロー発生時は例外を再送出し、呼出元 Include で SHORTDUMP する。"
+    ],
+    "dependencies": [
+      {
+        "objectName": "Z_FI_PROCESS_00001120",
+        "objectType": "Function Module",
+        "purpose": "処理の入口となり Include を呼び出す。"
+      },
+      {
+        "objectName": "ZFI0001_001_01",
+        "objectType": "Include",
+        "purpose": "クラスメソッドを呼び出し、算術オーバーフローを SHORTDUMP にする。"
+      },
+      {
+        "objectName": "ZCLFI0001_001_01",
+        "objectType": "Class",
+        "purpose": "設定取得、対象指図判定、金額集計および HKONT 置換を実装する。"
+      },
+      {
+        "objectName": "BSEG_SUBST",
+        "objectType": "DDIC structure",
+        "purpose": "置換対象明細データを保持し、HKONT を更新する。"
+      },
+      {
+        "objectName": "ZABSEG_SUBST1",
+        "objectType": "Append structure extension",
+        "purpose": "BSEG_SUBST に HKONT 項目を追加する拡張定義。"
+      },
+      {
+        "objectName": "CX_SY_ARITHMETIC_OVERFLOW",
+        "objectType": "Exception class",
+        "purpose": "金額加算時の算術オーバーフローを通知する。"
+      }
+    ],
+    "publicApis": [
+      {
+        "apiName": "ZC_XA_TVARVC",
+        "apiType": "CDS view",
+        "purpose": "処理対象伝票タイプ、投資指図タイプおよび買掛金勘定の設定を取得する。"
+      },
+      {
+        "apiName": "I_ORDER",
+        "apiType": "CDS view",
+        "purpose": "指図 ID と指図タイプを参照し、対象投資指図を特定する。"
+      }
+    ],
+    "messages": [],
+    "dataModel": [
+      {
+        "objectName": "ZC_XA_TVARVC",
+        "fieldName": "NAME / SIGN / OPTI / LOW / HIGH",
+        "purpose": "選択条件・範囲設定および買掛金勘定の設定値",
+        "processing": "参照"
+      },
+      {
+        "objectName": "I_ORDER",
+        "fieldName": "ORDERID / ORDERTYPE",
+        "purpose": "対象投資指図の識別と指図タイプ判定",
+        "processing": "参照"
+      },
+      {
+        "objectName": "BKPF",
+        "fieldName": "BUKRS / BELNR / GJAHR / BLART",
+        "purpose": "会計伝票の識別および伝票タイプ判定",
+        "processing": "参照"
+      },
+      {
+        "objectName": "BSEG",
+        "fieldName": "BUKRS / BELNR / GJAHR / BUZID / AUFNR / DMBTR / KOART",
+        "purpose": "前渡金明細の抽出、指図分類・金額集計および仕入先明細の特定",
+        "processing": "参照"
+      },
+      {
+        "objectName": "BSEG_SUBST",
+        "fieldName": "HKONT",
+        "purpose": "置換後の買掛金勘定",
+        "processing": "更新"
+      }
+    ],
+    "exceptionHandling": [
+      {
+        "label": "データ取得結果が0件の場合",
+        "text": "ZC_XA_TVARVC の取得結果が0件、指図キーが空、または I_ORDER から対象指図が取得できない場合はメソッドを終了する。"
+      },
+      {
+        "label": "設定情報が取得できない場合",
+        "text": "必須設定のいずれかが未設定の場合はメソッドを終了する。"
+      },
+      {
+        "label": "対象条件を満たさない場合",
+        "text": "対象外 BLART の伝票、投資指図合計が非投資指図合計より小さい伝票、または仕入先明細がない場合は HKONT を置換しない。"
+      },
+      {
+        "label": "例外発生時",
+        "text": "金額加算時の CX_SY_ARITHMETIC_OVERFLOW を再送出し、Include で RAISE SHORTDUMP する。"
+      },
+      {
+        "label": "その他",
+        "text": "-"
+      }
+    ],
+    "testCases": [
+      {
+        "majorNo": "1",
+        "minorNo": "1-1",
+        "majorCase": "設定情報の確認",
+        "minorCase": "必須設定がすべて取得できる",
+        "expected": "設定範囲と買掛金勘定を読み込み、後続処理へ進む。"
+      },
+      {
+        "majorNo": "1",
+        "minorNo": "1-2",
+        "majorCase": "設定情報の確認",
+        "minorCase": "設定レコードが取得できない",
+        "expected": "メソッドが終了し、HKONT を置換しない。"
+      },
+      {
+        "majorNo": "1",
+        "minorNo": "1-3",
+        "majorCase": "設定情報の確認",
+        "minorCase": "BLART 範囲、AUART 範囲、HKONT のいずれかが未設定",
+        "expected": "メソッドが終了し、HKONT を置換しない。"
+      },
+      {
+        "majorNo": "2",
+        "minorNo": "2-1",
+        "majorCase": "対象指図の確認",
+        "minorCase": "明細から有効な指図キーが作成される",
+        "expected": "対象指図取得処理を実行する。"
+      },
+      {
+        "majorNo": "2",
+        "minorNo": "2-2",
+        "majorCase": "対象指図の確認",
+        "minorCase": "指図キーが空である",
+        "expected": "メソッドが終了する。"
+      },
+      {
+        "majorNo": "2",
+        "minorNo": "2-3",
+        "majorCase": "対象指図の確認",
+        "minorCase": "対象 OrderType の指図が取得できない",
+        "expected": "メソッドが終了する。"
+      },
+      {
+        "majorNo": "3",
+        "minorNo": "3-1",
+        "majorCase": "伝票対象判定",
+        "minorCase": "BLART が設定範囲内である",
+        "expected": "対象伝票の前渡金明細を集計する。"
+      },
+      {
+        "majorNo": "3",
+        "minorNo": "3-2",
+        "majorCase": "伝票対象判定",
+        "minorCase": "BLART が設定範囲外である",
+        "expected": "当該伝票をスキップする。"
+      },
+      {
+        "majorNo": "4",
+        "minorNo": "4-1",
+        "majorCase": "前渡金明細の分類",
+        "minorCase": "BUZID が 'W' で対象指図に該当する",
+        "expected": "DMBTR を投資指図合計に加算する。"
+      },
+      {
+        "majorNo": "4",
+        "minorNo": "4-2",
+        "majorCase": "前渡金明細の分類",
+        "minorCase": "BUZID が 'W' で対象指図に該当しない",
+        "expected": "DMBTR を非投資指図合計に加算する。"
+      },
+      {
+        "majorNo": "4",
+        "minorNo": "4-3",
+        "majorCase": "前渡金明細の分類",
+        "minorCase": "BUZID が 'W' 以外である",
+        "expected": "金額集計対象にしない。"
+      },
+      {
+        "majorNo": "5",
+        "minorNo": "5-1",
+        "majorCase": "金額比較・置換",
+        "minorCase": "投資指図合計が非投資指図合計より大きい",
+        "expected": "仕入先明細が存在すれば HKONT を設定値に置換する。"
+      },
+      {
+        "majorNo": "5",
+        "minorNo": "5-2",
+        "majorCase": "金額比較・置換",
+        "minorCase": "投資指図合計と非投資指図合計が等しい",
+        "expected": "仕入先明細が存在すれば HKONT を設定値に置換する。"
+      },
+      {
+        "majorNo": "5",
+        "minorNo": "5-3",
+        "majorCase": "金額比較・置換",
+        "minorCase": "投資指図合計が非投資指図合計より小さい",
+        "expected": "当該伝票の HKONT を置換しない。"
+      },
+      {
+        "majorNo": "5",
+        "minorNo": "5-4",
+        "majorCase": "金額比較・置換",
+        "minorCase": "同一伝票に KOART = 'K' の明細がない",
+        "expected": "HKONT を変更しない。"
+      },
+      {
+        "majorNo": "6",
+        "minorNo": "6-1",
+        "majorCase": "例外処理",
+        "minorCase": "金額加算時に算術オーバーフローが発生する",
+        "expected": "CX_SY_ARITHMETIC_OVERFLOW が再送出され、Include で SHORTDUMP となる。"
+      }
+    ]
+  }
+}
