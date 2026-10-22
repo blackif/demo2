@@ -1,0 +1,135 @@
+name: check_document
+
+on:
+  schedule:
+    # GitHub Actions 的 cron 最短间隔为 5 分钟
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+# 防止上一次尚未结束时重复触发，避免并发创建重复 Issue
+concurrency:
+  group: check_document
+  cancel-in-progress: false
+
+jobs:
+  check_document:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check readme files and create issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          ZPACK_DIR="sap/zpack"
+          TEMPLATE="sap/document/template/issues.md"
+          LABEL="to do"
+          export SKILL_PATH="sap/document/skills/readme_generation.md"
+          export REPO
+
+          if [ ! -d "$ZPACK_DIR" ]; then
+            echo "Directory $ZPACK_DIR not found. Nothing to check."
+            exit 0
+          fi
+          if [ ! -f "$TEMPLATE" ]; then
+            echo "::error::Issue template $TEMPLATE not found."
+            exit 1
+          fi
+
+          # 取得当前所有 open 的 Issue 标题（只检查 open）
+          gh issue list --repo "$REPO" --state open --limit 1000 \
+            --json title > open_issues.json
+
+          label_checked=0
+          ensure_label() {
+            if [ "$label_checked" -eq 1 ]; then return; fi
+            if ! gh label list --repo "$REPO" --limit 1000 --json name --jq '.[].name' \
+                 | grep -Fxq "$LABEL"; then
+              echo "Label '$LABEL' not found. Creating it."
+              gh label create "$LABEL" --repo "$REPO" \
+                --color "fbca04" --description "待处理" || true
+            fi
+            label_checked=1
+          }
+
+          shopt -s nullglob
+          for dir in "$ZPACK_DIR"/*/; do
+            name="$(basename "$dir")"
+            doc_dir="$ZPACK_DIR/$name/document"
+
+            # readme.json 与 readme.md 两个都存在才算完成
+            if [ -f "$doc_dir/readme.json" ] && [ -f "$doc_dir/readme.md" ]; then
+              echo "[skip] $name: readme.json and readme.md exist."
+              continue
+            fi
+
+            title="创建${name}的readme文件"
+
+            # 同 title 的 open Issue 已存在则跳过（完整 title 精确匹配）
+            dup="$(jq --arg t "$title" '[.[] | select(.title == $t)] | length' open_issues.json)"
+            if [ "$dup" -gt 0 ]; then
+              echo "[skip] $name: open issue already exists: $title"
+              continue
+            fi
+
+            # 基于模板生成 Issue 正文
+            export NAME="$name"
+            python3 - "$TEMPLATE" > issue_body.md <<'PY'
+          import os
+          import sys
+
+          template = open(sys.argv[1], encoding="utf-8").read()
+          name = os.environ["NAME"]
+          repo = os.environ["REPO"]
+          skill = os.environ["SKILL_PATH"]
+          base = f"https://github.com/{repo}"
+          target = f"sap/zpack/{name}"
+          doc = f"{target}/document"
+
+          task = f"为 `{target}` 创建 readme 文件（`readme.json` 与 `readme.md`）。"
+          requirement = "\n".join([
+              f"- 必须参考 skill：[{skill}]({base}/blob/main/{skill})",
+              f"- 目标目录：[{target}]({base}/tree/main/{target})",
+              "- 输出文件：",
+              f"  - `{doc}/readme.json`",
+              f"  - `{doc}/readme.md`",
+              f"- 如果 `{doc}/` 目录不存在，请先创建",
+          ])
+          checklist = "\n".join([
+              "- [ ] 已按 readme_generation.md 的规则生成 `readme.json`",
+              "- [ ] 已按 readme_generation.md 的规则生成 `readme.md`",
+              f"- [ ] 两个文件均位于 `{doc}/` 下",
+          ])
+
+          body = (
+              template
+              .replace("- [ ] {{Checklist item}}", checklist)
+              .replace("- {{Requirement}}", requirement)
+              .replace("{{Task}}", task)
+          )
+          if "{{" in body:
+              sys.stderr.write("Unreplaced placeholder remains in template.\n")
+              sys.exit(1)
+          sys.stdout.write(body)
+          PY
+
+            ensure_label
+            echo "[create] $name: $title"
+            gh issue create --repo "$REPO" \
+              --title "$title" \
+              --label "$LABEL" \
+              --body-file issue_body.md
+
+            # 同一次运行内也避免重复
+            jq --arg t "$title" '. + [{"title": $t}]' open_issues.json > open_issues.tmp
+            mv open_issues.tmp open_issues.json
+          done
