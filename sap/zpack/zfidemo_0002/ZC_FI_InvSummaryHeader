@@ -1,0 +1,14 @@
+@EndUserText.label: 'Invoice Summary Header'
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@VDM.viewType: #CONSUMPTION
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@Search.searchable: true
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.dataCategory: #VALUE_HELP
+define view entity ZC_FI_InvSummaryHeader
+  as select from ZI_FI_InvSummaryHeader
+{
+  key bukrs as CompanyCode,
+      @Search.defaultSearchElement: true
+  key invsumnr as InvNum
+}
