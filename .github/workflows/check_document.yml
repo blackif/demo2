@@ -35,6 +35,7 @@ jobs:
           TEMPLATE="sap/document/template/issues.md"
           LABEL="Todo"
           export SKILL_PATH="sap/document/skills/readme_generation.md"
+          export ISSUE_SKILL_PATH="sap/document/skills/issue_execution.md"
           export REPO
 
           if [ ! -d "$ZPACK_DIR" ]; then
@@ -92,12 +93,14 @@ jobs:
           name = os.environ["NAME"]
           repo = os.environ["REPO"]
           skill = os.environ["SKILL_PATH"]
+          issue_skill = os.environ["ISSUE_SKILL_PATH"]
           base = f"https://github.com/{repo}"
           target = f"sap/zpack/{name}"
           doc = f"{target}/document"
 
           task = f"为 `{target}` 创建 readme 文件（`readme.json` 与 `readme.md`）。"
           requirement = "\n".join([
+              f"- 必须参考 skill：[{issue_skill}]({base}/blob/main/{issue_skill})",
               f"- 必须参考 skill：[{skill}]({base}/blob/main/{skill})",
               f"- 目标目录：[{target}]({base}/tree/main/{target})",
               "- 输出文件：",
