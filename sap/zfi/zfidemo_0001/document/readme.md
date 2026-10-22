@@ -131,6 +131,13 @@ flowchart TD
 | ZCLFI0001_001_01 | 独自クラス | 設定取得、投資指図判定、金額集計、HKONT設定を実装する。 |
 | ZABSEG_SUBST1 | Append Structure | BSEG_SUBSTにHKONT項目を追加する。 |
 | CX_SY_ARITHMETIC_OVERFLOW | 例外クラス | 金額加算時の算術オーバーフローを通知する。 |
+| BKPF | DDIC構造 | 会計伝票ヘッダの行型として使用し、伝票キーおよび伝票タイプを参照する。 |
+| BSEG | DDIC構造 | 会計伝票明細の行型として使用し、指図番号・明細区分・金額・勘定タイプを参照する。 |
+| BSEG_SUBST | DDIC構造 | 勘定置換用明細の型として使用し、HKONTを設定する。 |
+| BKDF | DDIC構造 | Function Moduleの任意入力パラメータI_BKDFの型。 |
+| BKDF_SUBST | DDIC構造 | Function Moduleの任意変更パラメータI_BKDFSUBの型。 |
+| BKPF_SUBST | DDIC構造 | Function ModuleのテーブルパラメータT_BKPF_SUBSTの行型。 |
+| BSEC | DDIC構造 | Function Moduleの任意テーブルパラメータT_BSECの行型。 |
 
 ### 使用公開API
 
@@ -138,13 +145,6 @@ flowchart TD
 | --- | --- | --- |
 | ZC_XA_TVARVC | CDS View | 3種類の処理設定を取得する。 |
 | I_ORDER | CDS View | 指図番号と投資指図タイプを照合して対象指図を取得する。 |
-| BKPF | SAP構造 | 会計伝票ヘッダの伝票キーと伝票タイプを扱う。 |
-| BSEG | SAP構造 | 会計伝票明細の指図番号、明細区分、金額、勘定タイプを扱う。 |
-| BSEG_SUBST | SAP構造 | 勘定置換用明細を受け取り、HKONTを設定する。 |
-| BKDF | SAP構造 | Function Moduleの任意入力パラメータI_BKDFの型。 |
-| BKDF_SUBST | SAP構造 | Function Moduleの任意変更パラメータI_BKDFSUBの型。 |
-| BKPF_SUBST | SAP構造 | Function ModuleのテーブルパラメータT_BKPF_SUBSTの行型。 |
-| BSEC | SAP構造 | Function Moduleの任意テーブルパラメータT_BSECの行型。 |
 
 ## 補足情報
 
