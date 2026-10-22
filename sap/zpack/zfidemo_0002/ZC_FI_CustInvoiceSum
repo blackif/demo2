@@ -1,0 +1,14 @@
+@EndUserText.label: 'customerInvoice summary'
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@VDM.viewType: #CONSUMPTION
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@Search.searchable: true
+@Metadata.ignorePropagatedAnnotations: true
+define view entity ZC_FI_CustInvoiceSum
+  as select from ZI_FI_CustInvoiceSum
+{
+  key CompanyCode,
+      @Search.defaultSearchElement: true
+  key Customer,
+      CustomerName
+}
