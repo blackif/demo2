@@ -1,0 +1,158 @@
+CLASS zclfi0001_001_01 DEFINITION
+  PUBLIC FINAL
+  CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    TYPES t_account_doc_header_t   TYPE STANDARD TABLE OF bkpf.
+    TYPES t_account_doc_item_t     TYPE STANDARD TABLE OF bseg
+                                                   WITH NON-UNIQUE SORTED KEY line_item
+                                                       COMPONENTS bukrs belnr gjahr buzid
+                                                   WITH NON-UNIQUE SORTED KEY account_type
+                                                       COMPONENTS bukrs belnr gjahr koart.
+    TYPES t_bseg_subst_t           TYPE STANDARD TABLE OF bseg_subst.
+    TYPES t_account_doc_item_sub_t TYPE STANDARD TABLE OF bseg_subst
+                                                       WITH NON-UNIQUE SORTED KEY row_index
+                                                           COMPONENTS tabix.
+    TYPES t_document_type_t        TYPE RANGE OF blart.
+    TYPES t_sales_document_type_t  TYPE RANGE OF auart.
+    TYPES:
+      BEGIN OF s_order_key,
+        orderid TYPE i_order-orderid,
+      END OF s_order_key.
+    TYPES t_order_key_t TYPE HASHED TABLE OF s_order_key WITH UNIQUE KEY orderid.
+
+    CLASS-METHODS z_fi_process_00001120
+      IMPORTING account_doc_header TYPE t_account_doc_header_t
+                account_doc_item   TYPE t_account_doc_item_t
+      CHANGING  bseg_subst         TYPE t_bseg_subst_t
+      RAISING   cx_sy_arithmetic_overflow.
+
+  PRIVATE SECTION.
+    CONSTANTS buzid_down_payment         TYPE buzid       VALUE 'W' ##NO_TEXT.
+    CONSTANTS koart_vendor_account       TYPE koart       VALUE 'K' ##NO_TEXT.
+    CONSTANTS vname_invoice_verification TYPE zevari_name VALUE 'Z_FI_PROCESS_00001120_BLART' ##NO_TEXT.
+    CONSTANTS vname_investment_order    TYPE zevari_name VALUE 'Z_FI_PROCESS_00001120_AUART' ##NO_TEXT.
+    CONSTANTS vname_accounts_payable    TYPE zevari_name VALUE 'Z_FI_PROCESS_00001120_HKONT' ##NO_TEXT.
+ENDCLASS.
+
+
+CLASS zclfi0001_001_01 IMPLEMENTATION.
+  METHOD z_fi_process_00001120.
+    DATA order_t                TYPE t_order_key_t.
+    DATA account_doc_item_sub_t TYPE t_account_doc_item_sub_t.
+    DATA investment_total       TYPE bseg-dmbtr.
+    DATA non_investment_total   TYPE bseg-dmbtr.
+    DATA invoice_verification  TYPE t_document_type_t.
+    DATA investment_order      TYPE t_sales_document_type_t.
+    DATA accounts_payable      TYPE hkont.
+
+    SELECT FROM zc_xa_tvarvc
+      FIELDS name,
+             sign,
+             opti,
+             low,
+             high
+      WHERE name = @vname_invoice_verification
+         OR name = @vname_investment_order
+         OR name = @vname_accounts_payable
+      INTO TABLE @FINAL(variant_t).
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    LOOP AT variant_t ASSIGNING FIELD-SYMBOL(<variant_s>).
+      CASE <variant_s>-name.
+        WHEN vname_invoice_verification.
+          invoice_verification = VALUE #( BASE invoice_verification
+                                          ( sign   = <variant_s>-sign
+                                            option = <variant_s>-opti
+                                            low    = <variant_s>-low
+                                            high   = <variant_s>-high ) ).
+        WHEN vname_investment_order.
+          investment_order = VALUE #( BASE investment_order
+                                      ( sign   = <variant_s>-sign
+                                        option = <variant_s>-opti
+                                        low    = <variant_s>-low
+                                        high   = <variant_s>-high ) ).
+        WHEN vname_accounts_payable.
+          accounts_payable = CONV hkont( <variant_s>-low ).
+      ENDCASE.
+    ENDLOOP.
+
+    IF    ( invoice_verification IS INITIAL )
+       OR ( investment_order     IS INITIAL )
+       OR ( accounts_payable     IS INITIAL ).
+      RETURN.
+    ENDIF.
+
+    DATA(order_key) = CORRESPONDING t_order_key_t(
+      account_doc_item DISCARDING DUPLICATES
+      MAPPING orderid = aufnr ).
+
+    DELETE order_key
+           WHERE orderid IS INITIAL.
+
+    IF order_key IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM i_order
+      FIELDS OrderID
+      FOR ALL ENTRIES IN @order_key
+      WHERE OrderID    = @order_key-orderid
+        AND OrderType IN @investment_order
+      INTO TABLE @order_t.
+
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    account_doc_item_sub_t = bseg_subst.
+
+    LOOP AT account_doc_header ASSIGNING FIELD-SYMBOL(<account_doc_header>).
+      IF <account_doc_header>-blart NOT IN invoice_verification.
+        CONTINUE.
+      ENDIF.
+
+      CLEAR investment_total.
+      CLEAR non_investment_total.
+
+      LOOP AT account_doc_item ASSIGNING FIELD-SYMBOL(<account_doc_item>)
+           USING KEY line_item
+           WHERE     bukrs = <account_doc_header>-bukrs
+                 AND belnr = <account_doc_header>-belnr
+                 AND gjahr = <account_doc_header>-gjahr
+                 AND buzid = buzid_down_payment.
+        TRY.
+            IF line_exists( order_t[ KEY primary_key
+                                     OrderID = <account_doc_item>-aufnr ] ).
+              investment_total += <account_doc_item>-dmbtr.
+            ELSE.
+              non_investment_total += <account_doc_item>-dmbtr.
+            ENDIF.
+          CATCH cx_sy_arithmetic_overflow INTO FINAL(arithmetic_overflow).
+            RAISE EXCEPTION arithmetic_overflow.
+        ENDTRY.
+      ENDLOOP.
+
+      IF investment_total < non_investment_total.
+        CONTINUE.
+      ENDIF.
+
+      FINAL(substitute_index) = line_index(
+        account_doc_item[ KEY account_type
+                          bukrs = <account_doc_header>-bukrs
+                          belnr = <account_doc_header>-belnr
+                          gjahr = <account_doc_header>-gjahr
+                          koart = koart_vendor_account ] ).
+
+      IF substitute_index IS NOT INITIAL.
+        account_doc_item_sub_t[ KEY row_index
+                                tabix = substitute_index ]-hkont = accounts_payable.
+      ENDIF.
+    ENDLOOP.
+
+    bseg_subst = account_doc_item_sub_t.
+  ENDMETHOD.
+ENDCLASS.
