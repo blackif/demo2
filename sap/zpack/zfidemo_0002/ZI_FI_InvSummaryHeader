@@ -1,0 +1,10 @@
+@EndUserText.label: 'Invoice Summary Header'
+@Analytics.dataExtraction.enabled: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@VDM.viewType: #BASIC
+define view entity ZI_FI_InvSummaryHeader
+  as select distinct from isjpinvsumhd
+{
+  key bukrs,
+  key invsumnr
+}
