@@ -290,6 +290,41 @@
         "objectName": "CX_SY_ARITHMETIC_OVERFLOW",
         "objectType": "例外クラス",
         "purpose": "金額加算時の算術オーバーフローを通知する。"
+      },
+      {
+        "objectName": "BKPF",
+        "objectType": "DDIC構造",
+        "purpose": "会計伝票ヘッダの行型として使用し、伝票キーおよび伝票タイプを参照する。"
+      },
+      {
+        "objectName": "BSEG",
+        "objectType": "DDIC構造",
+        "purpose": "会計伝票明細の行型として使用し、指図番号・明細区分・金額・勘定タイプを参照する。"
+      },
+      {
+        "objectName": "BSEG_SUBST",
+        "objectType": "DDIC構造",
+        "purpose": "勘定置換用明細の型として使用し、HKONTを設定する。"
+      },
+      {
+        "objectName": "BKDF",
+        "objectType": "DDIC構造",
+        "purpose": "Function Moduleの任意入力パラメータI_BKDFの型。"
+      },
+      {
+        "objectName": "BKDF_SUBST",
+        "objectType": "DDIC構造",
+        "purpose": "Function Moduleの任意変更パラメータI_BKDFSUBの型。"
+      },
+      {
+        "objectName": "BKPF_SUBST",
+        "objectType": "DDIC構造",
+        "purpose": "Function ModuleのテーブルパラメータT_BKPF_SUBSTの行型。"
+      },
+      {
+        "objectName": "BSEC",
+        "objectType": "DDIC構造",
+        "purpose": "Function Moduleの任意テーブルパラメータT_BSECの行型。"
       }
     ],
     "publicApis": [
@@ -302,41 +337,6 @@
         "apiName": "I_ORDER",
         "apiType": "CDS View",
         "purpose": "指図番号と投資指図タイプを照合して対象指図を取得する。"
-      },
-      {
-        "apiName": "BKPF",
-        "apiType": "SAP構造",
-        "purpose": "会計伝票ヘッダの伝票キーと伝票タイプを扱う。"
-      },
-      {
-        "apiName": "BSEG",
-        "apiType": "SAP構造",
-        "purpose": "会計伝票明細の指図番号、明細区分、金額、勘定タイプを扱う。"
-      },
-      {
-        "apiName": "BSEG_SUBST",
-        "apiType": "SAP構造",
-        "purpose": "勘定置換用明細を受け取り、HKONTを設定する。"
-      },
-      {
-        "apiName": "BKDF",
-        "apiType": "SAP構造",
-        "purpose": "Function Moduleの任意入力パラメータI_BKDFの型。"
-      },
-      {
-        "apiName": "BKDF_SUBST",
-        "apiType": "SAP構造",
-        "purpose": "Function Moduleの任意変更パラメータI_BKDFSUBの型。"
-      },
-      {
-        "apiName": "BKPF_SUBST",
-        "apiType": "SAP構造",
-        "purpose": "Function ModuleのテーブルパラメータT_BKPF_SUBSTの行型。"
-      },
-      {
-        "apiName": "BSEC",
-        "apiType": "SAP構造",
-        "purpose": "Function Moduleの任意テーブルパラメータT_BSECの行型。"
       }
     ],
     "messages": [],
