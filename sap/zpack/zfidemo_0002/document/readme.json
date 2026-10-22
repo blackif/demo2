@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0.0",
+  "meta": {
+    "package": "zfidemo_0002",
+    "packagePath": "sap/zpack/zfidemo_0002",
+    "template": "sap/document/template/readme_ja.md",
+    "language": "ja"
+  },
+  "files": [
+    {"path":"ZC_FI_CustInvoiceSum","objectName":"ZC_FI_CUSTINVOICESUM","objectType":"cds_view","status":"confirmed","role":"顧客請求書サマリの検索用消費ビュー。会社コード、得意先、得意先名を公開する。"},
+    {"path":"ZC_FI_InvSummaryHeader","objectName":"ZC_FI_INVSUMMARYHEADER","objectType":"cds_view","status":"confirmed","role":"請求サマリヘッダの値ヘルプ用消費ビュー。会社コードと請求番号を公開する。"},
+    {"path":"ZI_FI_CustInvoiceSum","objectName":"ZI_FI_CUSTINVOICESUM","objectType":"cds_view","status":"confirmed","role":"請求サマリ階層と得意先を結合し、親ロールの会社コード・得意先・得意先名を取得する。"},
+    {"path":"ZI_FI_Customer","objectName":"ZI_FI_CUSTOMER","objectType":"cds_view","status":"confirmed","role":"標準得意先ビュー I_CUSTOMER から得意先と得意先名を公開する基本ビュー。"},
+    {"path":"ZI_FI_InvSummaryHeader","objectName":"ZI_FI_INVSUMMARYHEADER","objectType":"cds_view","status":"confirmed","role":"ISJPINVSUMHD から会社コードと請求サマリ番号を重複排除して取得する基本ビュー。"},
+    {"path":"ZI_FI_InvcSumHierarch","objectName":"ZI_FI_INVCSUMHIERARCH","objectType":"cds_view","status":"confirmed","role":"P_JP_INVCSUMMARYHIERARCH から会社コード、得意先、請求サマリロールを取得する基本ビュー。"}
+  ],
+  "fields": [
+    {"field":"## 業務要件","status":"unknown","reason":"ソースコードに業務目的・背景・期待結果の明示的な記載がない。"},
+    {"field":"## 機能要件","status":"confirmed"},
+    {"field":"## 業務フロー","status":"unknown","reason":"起動契機とユーザ操作をソースコードから確認できない。"},
+    {"field":"## 処理概要","status":"confirmed"},
+    {"field":"### 1. 機能概要","status":"confirmed"},
+    {"field":"### 2. 処理詳細","status":"confirmed"},
+    {"field":"### 3. 処理条件","status":"confirmed"},
+    {"field":"### 4. 処理概要図","status":"confirmed"},
+    {"field":"### **前提条件：**","status":"confirmed"},
+    {"field":"### **制約条件：**","status":"confirmed"},
+    {"field":"## 依存関係","status":"confirmed"},
+    {"field":"### 使用公開API","status":"confirmed"},
+    {"field":"### **メッセージ**","status":"confirmed"},
+    {"field":"### データモデル・項目情報","status":"confirmed"},
+    {"field":"### 例外処理","status":"confirmed"},
+    {"field":"# テスト仕様書","status":"confirmed"}
+  ],
+  "content": {
+    "businessRequirement": null,
+    "functionalRequirement": ["入力：本パッケージのCDS Viewを通じて会社コード、得意先、得意先名、請求サマリ番号を参照する。", "出力：顧客請求書サマリおよび請求サマリヘッダの項目を公開する。", "処理条件：顧客請求書サマリでは請求サマリ階層のロールが 'P' のデータを対象とする。", "機能上の制約：データ取得・更新処理は定義されておらず、CDS Viewによる参照機能である。"],
+    "businessFlow": null,
+    "processSummary": ["CDS View群により請求サマリ階層と得意先マスタを関連付け、顧客請求書サマリおよび請求サマリヘッダの参照項目を提供する。"],
+    "functionOverview": {"functionName":"顧客請求書サマリ／請求サマリヘッダ参照","processingMethod":"CDS View Entity","processingSummary":"基本ビューで標準得意先・請求サマリデータを公開し、消費ビューで結合、ロール絞り込み、検索用アノテーションおよび値ヘルプ項目を定義する。"},
+    "processSteps": [{"title":"基本ビューによるデータ公開","details":["ZI_FI_Customer は I_Customer から Customer と CustomerName を公開する。","ZI_FI_InvSummaryHeader は ISJPINVSUMHD から CompanyCode と InvNum に相当するキーを取得する。","ZI_FI_InvcSumHierarch は P_JP_invcsummaryhierarch から CompanyCode、Customer、InvcSumRole を公開する。"]},{"title":"顧客請求書サマリの構成","details":["ZI_FI_CustInvoiceSum は ZI_FI_InvcSumHierarch と ZI_FI_Customer を Customer で内部結合する。","InvcSumRole = 'P' のデータに絞り込み、CompanyCode、Customer、CustomerName を公開する。","ZC_FI_CustInvoiceSum はこの結果を消費ビューとして公開し、Customer をデフォルト検索要素に指定する。"]},{"title":"請求サマリヘッダの値ヘルプ構成","details":["ZC_FI_InvSummaryHeader は ZI_FI_InvSummaryHeader を参照し、CompanyCode と InvNum をキーとして公開する。","InvNum をデフォルト検索要素に指定し、値ヘルプ用データカテゴリを設定する。"]}],
+    "processConditions": [{"target":"請求サマリロール","condition":"ZI_FI_CustInvoiceSum の InvcSumRole が 'P'","onTrue":"顧客請求書サマリの対象として出力する。","onFalse":"WHERE 条件により出力対象外となる。"}],
+    "flowchart": {"mermaid":["flowchart TD","    A[\"請求サマリ階層を取得\"] --> B[\"得意先マスタを Customer で内部結合\"]","    B --> C{\"InvcSumRole = 'P' か\"}","    C -- \"はい\" --> D[\"会社コード・得意先・得意先名を公開\"]","    C -- \"いいえ\" --> E[\"対象外\"]","    D --> F[\"消費ビューから検索可能な項目として公開\"]"]},
+    "prerequisites": ["データソース設定：I_CUSTOMER、P_JP_INVCSUMMARYHIERARCH、ISJPINVSUMHD が利用可能であること。"],
+    "constraints": ["対象データ：顧客請求書サマリは InvcSumRole = 'P' のデータに限定される。","処理範囲：CDS Viewによる参照定義であり、データ更新処理は含まれない。","アクセス制御：各ビューの authorizationCheck アノテーション設定に従う。"],
+    "dependencies": [],
+    "publicApis": [{"apiName":"I_CUSTOMER","apiType":"CDS View","purpose":"得意先コードと得意先名を取得する。"},{"apiName":"P_JP_INVCSUMMARYHIERARCH","apiType":"CDS View","purpose":"請求サマリ階層の会社コード、得意先、ロールを取得する。"},{"apiName":"ISJPINVSUMHD","apiType":"Database Table/View","purpose":"請求サマリヘッダの会社コードと請求サマリ番号を取得する。"},{"apiName":"ZI_FI_Customer","apiType":"CDS View","purpose":"得意先情報を基本ビューとして公開する。"},{"apiName":"ZI_FI_InvcSumHierarch","apiType":"CDS View","purpose":"請求サマリ階層情報を基本ビューとして公開する。"},{"apiName":"ZI_FI_InvSummaryHeader","apiType":"CDS View","purpose":"請求サマリヘッダ情報を基本ビューとして公開する。"},{"apiName":"ZI_FI_CustInvoiceSum","apiType":"CDS View","purpose":"顧客請求書サマリを消費ビューへ提供する。"}],
+    "messages": [],
+    "dataModel": [{"objectName":"ZI_FI_InvcSumHierarch","fieldName":"CompanyCode、Customer、InvcSumRole","purpose":"請求サマリ階層と親ロールの識別","processing":"参照し、InvcSumRole = 'P' を判定する。"},{"objectName":"ZI_FI_Customer / I_CUSTOMER","fieldName":"Customer、CustomerName","purpose":"得意先と名称","processing":"Customer で内部結合し、CustomerName を出力する（参照）。"},{"objectName":"ISJPINVSUMHD / ZI_FI_InvSummaryHeader","fieldName":"BUKRS、INVSUMNR","purpose":"請求サマリヘッダの識別","processing":"重複排除して参照し、CompanyCode と InvNum として公開する。"}],
+    "exceptionHandling": [{"label":"データ取得結果が0件の場合","text":"CDS View の検索結果は0件となる。"},{"label":"設定情報が取得できない場合","text":"該当する設定情報取得処理はない。"},{"label":"対象条件を満たさない場合","text":"InvcSumRole が 'P' 以外のデータは顧客請求書サマリから除外される。"},{"label":"例外発生時","text":"ソースコード上に独自例外処理は定義されていない。"},{"label":"その他","text":"CDS View のアクセス制御は各ビューのアノテーションに従う。"}],
+    "testCases": [{"majorNo":"1","minorNo":"1-1","majorCase":"顧客請求書サマリの正常系","minorCase":"親ロールのデータが存在する","expected":"会社コード、得意先、得意先名が取得される。"},{"majorNo":"1","minorNo":"1-2","majorCase":"顧客請求書サマリの正常系","minorCase":"得意先マスタに対応するデータが存在する","expected":"Customer キーで内部結合され、得意先名が表示される。"},{"majorNo":"2","minorNo":"2-1","majorCase":"顧客請求書サマリの条件分岐","minorCase":"InvcSumRole が 'P' 以外","expected":"対象データとして出力されない。"},{"majorNo":"3","minorNo":"3-1","majorCase":"請求サマリヘッダの正常系","minorCase":"ヘッダデータが存在する","expected":"CompanyCode と InvNum がキー項目として取得される。"},{"majorNo":"3","minorNo":"3-2","majorCase":"請求サマリヘッダの境界系","minorCase":"同一キーに相当する重複データが存在する","expected":"ZI_FI_InvSummaryHeader の DISTINCT により重複行が排除される。"}]
+  }
+}
