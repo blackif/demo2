@@ -1,0 +1,5 @@
+@EndUserText.label : 'General Ledger Account'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+extend type bseg_subst with zabseg_subst1 {
+  hkont : hkont;
+}
