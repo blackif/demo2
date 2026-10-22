@@ -1,0 +1,18 @@
+@EndUserText.label: 'customerInvoice summary'
+@AccessControl.authorizationCheck: #CHECK
+@VDM.viewType: #CONSUMPTION
+@AbapCatalog.viewEnhancementCategory: [#NONE]
+@Search.searchable: true
+@Metadata.ignorePropagatedAnnotations: true
+define view entity ZI_FI_CustInvoiceSum
+  as select from ZI_FI_InvcSumHierarch as _InvcSum
+    inner join ZI_FI_Customer as _Customer
+      on _InvcSum.Customer = _Customer.Customer
+{
+  key _InvcSum.CompanyCode as CompanyCode,
+      @Search.defaultSearchElement: true
+  key _InvcSum.Customer as Customer,
+      _Customer.CustomerName as CustomerName
+}
+where
+  _InvcSum.InvcSumRole = 'P'
