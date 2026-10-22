@@ -33,7 +33,7 @@ jobs:
 
           ZPACK_DIR="sap/zpack"
           TEMPLATE="sap/document/template/issues.md"
-          LABEL="to do"
+          LABEL="Todo"
           export SKILL_PATH="sap/document/skills/readme_generation.md"
           export REPO
 
