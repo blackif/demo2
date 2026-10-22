@@ -1,0 +1,11 @@
+@EndUserText.label: 'Invoice Summary Hierarchy'
+@Analytics.dataExtraction.enabled: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@VDM.viewType: #BASIC
+define view entity ZI_FI_InvcSumHierarch
+  as select from P_JP_invcsummaryhierarch
+{
+  key bukrs as CompanyCode,
+  key kunnr as Customer,
+      invsumrole as InvcSumRole
+}
