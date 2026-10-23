@@ -35,6 +35,9 @@
 
 1. **判断是否首次**：`document/readme.json` 不存在即为首次执行。若首次执行时 `document/readme.md` 已存在，该 md 会被整体覆盖，覆盖前须向用户提示。
 2. **遍历文件**：遍历程序包内除 `document/` 以外的所有文件，不论目录名、扩展名、拼写是否规范。逐个完整阅读，按内容判断对象类型，登记到 `files`。无法判断类型或无法理解的文件：`objectType` 为 `unclassified`，`status` 为 `unknown`，`role` 为 `null`。
+   - 枚举文件必须用**目录列表或文件树**，**不得用代码搜索**（搜索有索引延迟，也搜不到没有扩展名的文件）。有终端时用 `ls -A`；用 API 时用 `GET /repos/{owner}/{repo}/contents/{程序包路径}?ref=main` 逐级列出子目录，或 `GET /repos/{owner}/{repo}/git/trees/main?recursive=1` 后按路径前缀筛选。
+   - 读取每个文件的完整内容用 `contents` API（带 `ref=main`）或 blob 的 `sha`，不得以搜索片段代替。
+   - 枚举完成后核对：登记到 `files` 的数量等于列表中 `document/` 以外的文件数。
 3. **逐项分析**：理解整个程序后，对 16 个标题逐项判断 confirmed 或 unknown，按第 5 节填写 `content`。非首次执行时，status 的继承按第 7 节处理。
 4. **写 readme.json 并校验**：用 `readme.schema.json` 校验，通过后才能继续；不通过则修正。
 5. **非首次执行**：按第 7.2 节做人工改动检测。

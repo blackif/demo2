@@ -25,7 +25,7 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 
 - 读取与修改 Issue 使用 **REST API**（`gh api repos/{owner}/{repo}/issues/{n} ...`，或 GitHub 连接器提供的等价 API）。GraphQL 在 Claude Code 会话中不可用，`gh issue view` / `gh issue edit` 可能因此失败。
 - 修改 Issue 前，先重新读取最新状态，避免覆盖他人的改动。
-- 每次执行都必须从 `main` 分支读取本文件的最新内容，不使用此前对话中读到或记住的旧版本；报告开头写出本文件在 `main` 上最近一次提交的 SHA（前 7 位）。
+- 每次执行都必须从 `main` 分支读取本文件的最新内容，不使用此前对话中读到或记住的旧版本；报告开头写出本文件在 `main` 上最近一次提交的 SHA（前 7 位）。取得方式：有终端用 `git log -1 --format=%h origin/main -- sap/document/skills/issue_execution.md`；用 API 时用 `GET /repos/{owner}/{repo}/commits?sha=main&path=sap/document/skills/issue_execution.md&per_page=1`。不要从搜索结果或连接器的文件读取结果里推断。读取文件内容时必须带 `ref=main`。
 - 写入 `main` 的方式按环境选择，两种等价，**不要求一定有 `git` 命令行**。选择规则：**当前工作目录已经是 `blackif/demo2` 的 git 检出仓库，并且 `git remote get-url origin` 指向该仓库时才用方式 A；其他情况（不在 git 仓库内、没有 `git` 命令、只有 GitHub 连接器）一律用方式 B**。不要为了使用方式 A 而去 `git clone`、`git init`，也不要运行 `git push --dry-run` 来"检查"，因为不在仓库内时它必然报 `not a git repository`，这不是权限问题。
   - **方式 A（已在检出仓库内）**：使用 `git`。只暂存输出文件（`git add <文件路径>`，不用 `git add -A` 或 `git add .`），提交后执行 `git pull --rebase origin main`，再 `git push origin main`。禁止 `--force`。
   - **方式 B（无终端，只有 GitHub 连接器或 API，如 ChatGPT）**：用 API 在 `main` 上创建或更新文件，每个输出文件一次提交。更新已存在的文件时必须带该文件最新的 `sha`。
