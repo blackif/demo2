@@ -93,12 +93,7 @@ flowchart TD
 
 | **オブジェクト名** | **種類** | **用途** |
 |---|---|---|
-| ZC_FI_CustInvoiceSum | CDS View Entity（消費ビュー） | ZI_FI_CustInvoiceSum の結果を消費ビューとして公開する。 |
-| ZC_FI_InvSummaryHeader | CDS View Entity（消費ビュー） | 請求サマリヘッダの項目を値ヘルプ用ビューとして公開する。 |
-| ZI_FI_CustInvoiceSum | CDS View Entity | 階層データと得意先マスタを結合した得意先サマリを提供する。 |
-| ZI_FI_Customer | CDS View Entity | 得意先コードと得意先名を提供する。 |
-| ZI_FI_InvSummaryHeader | CDS View Entity | 請求サマリヘッダの会社コードと請求サマリ番号を提供する。 |
-| ZI_FI_InvcSumHierarch | CDS View Entity | 会社コード・得意先・請求サマリ役割を提供する。 |
+| | | |
 
 ### 使用公開API
 
@@ -107,6 +102,10 @@ flowchart TD
 | I_Customer | 標準CDS View | 得意先コードと得意先名の参照元。 |
 | P_JP_invcsummaryhierarch | 標準CDS View | 請求サマリ階層の会社コード・得意先・役割の参照元。 |
 | isjpinvsumhd | データベーステーブル（CDS参照元） | 請求サマリヘッダの会社コードと請求サマリ番号の参照元。 |
+| ZI_FI_CustInvoiceSum | 独自CDS View Entity | 得意先サマリを生成し、消費ビューに公開する。 |
+| ZI_FI_Customer | 独自CDS View Entity | 得意先コードと得意先名を提供する。 |
+| ZI_FI_InvSummaryHeader | 独自CDS View Entity | 請求サマリヘッダ項目を消費ビューに提供する。 |
+| ZI_FI_InvcSumHierarch | 独自CDS View Entity | 請求サマリ階層データを提供する。 |
 
 ## 補足情報
 
