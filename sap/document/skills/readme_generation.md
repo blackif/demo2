@@ -33,14 +33,17 @@
 
 ## 4. 生成流程
 
-1. **判断是否首次**：`document/readme.json` 不存在即为首次执行。若首次执行时 `document/readme.md` 已存在，该 md 会被整体覆盖，覆盖前须向用户提示。
+1. **判断执行类型**：检查 `document/readme.json` 和 `document/readme.md` 是否存在（不存在时 API 返回 404 是正常结果，不是错误）。
+   - 两者都不存在，或只有 `readme.md` 存在：**首次执行**，按完整流程。`readme.md` 已存在时，该 md 会被整体覆盖，覆盖前须向用户提示。
+   - 只有 `readme.json` 存在（上次运行在写入 md 之前中断）：**续做**。不重新分析，不修改 json：读取 json，用 schema 校验，通过后直接从第 6 步渲染 md。校验不通过时，按 `issue_execution.md` 步骤 3 处理，说明 json 有问题，请人确认。
+   - 两者都存在：非首次执行，按第 7 节处理。
 2. **遍历文件**：遍历程序包内除 `document/` 以外的所有文件，不论目录名、扩展名、拼写是否规范。逐个完整阅读，按内容判断对象类型，登记到 `files`。无法判断类型或无法理解的文件：`objectType` 为 `unclassified`，`status` 为 `unknown`，`role` 为 `null`。
-   - 如果 Issue「要求」里附有「程序包文件清单」，以它为起点，按路径逐个读取；同时尽量用目录树核对，二者不一致时以 `main` 上的目录树为准，并在报告中说明。
+   - 如果 Issue「要求」里附有「程序包文件清单」，以它为起点，按路径逐个读取；不必再用目录树核对（调用次数有限时尤其如此）；如果已经取得了目录树，则核对，二者不一致时以 `main` 上的目录树为准，并在报告中说明。
    - 枚举文件必须用**目录列表或文件树**，**不得用代码搜索**（搜索有索引延迟，也搜不到没有扩展名的文件）。有终端时用 `ls -A`；用 API 时用 `GET /repos/{owner}/{repo}/contents/{程序包路径}?ref=main` 逐级列出子目录，或 `GET /repos/{owner}/{repo}/git/trees/main?recursive=1` 后按路径前缀筛选。只能读单个文件的接口（如连接器的 `fetch_file`）不能对目录路径调用，会报错。不要猜测目录名，一切以枚举结果或 Issue 清单为准。
    - 读取每个文件的完整内容用 `contents` API（带 `ref=main`）或 blob 的 `sha`，不得以搜索片段代替。
    - 枚举完成后核对：登记到 `files` 的数量等于列表中 `document/` 以外的文件数。
 3. **逐项分析**：理解整个程序后，对 16 个标题逐项判断 confirmed 或 unknown，按第 5 节填写 `content`。非首次执行时，status 的继承按第 7 节处理。
-4. **写 readme.json 并校验**：用 `readme.schema.json` 校验，通过后才能继续；不通过则修正。
+4. **写 readme.json 并校验**：用 `readme.schema.json` 校验，通过后才能继续；不通过则修正。通过后立即写入（在 Issue 流程中即写入 `main`，作为检查点，见 `issue_execution.md` 步骤 4），然后再渲染 md。
 5. **非首次执行**：按第 7.2 节做人工改动检测。
 6. **渲染 md**：按第 8 节渲染，写入 `document/readme.md`。
 7. **自检并报告**：按第 9 节。

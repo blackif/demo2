@@ -25,7 +25,7 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 
 - 读取与修改 Issue 使用 **REST API**（`gh api repos/{owner}/{repo}/issues/{n} ...`，或 GitHub 连接器提供的等价 API）。GraphQL 在 Claude Code 会话中不可用，`gh issue view` / `gh issue edit` 可能因此失败。
 - 修改 Issue 前，先重新读取最新状态，避免覆盖他人的改动。
-- 每次执行都必须从 `main` 分支读取本文件的最新内容，不使用此前对话中读到或记住的旧版本；报告开头写出本文件在 `main` 上最近一次提交的 SHA（前 7 位）。取得方式：有终端用 `git log -1 --format=%h origin/main -- sap/document/skills/issue_execution.md`；用 API 时用 `GET /repos/{owner}/{repo}/commits?sha=main&path=sap/document/skills/issue_execution.md&per_page=1`。不要从搜索结果或连接器的文件读取结果里推断。读取文件内容时必须带 `ref=main`。
+- 每次执行都必须从 `main` 分支读取本文件的最新内容（读取时带 `ref=main`），不使用此前对话中读到或记住的旧版本。
 - 写入 `main` 的方式按环境选择，两种等价，**不要求一定有 `git` 命令行**。选择规则：**当前工作目录已经是 `blackif/demo2` 的 git 检出仓库，并且 `git remote get-url origin` 指向该仓库时才用方式 A；其他情况（不在 git 仓库内、没有 `git` 命令、只有 GitHub 连接器）一律用方式 B**。不要为了使用方式 A 而去 `git clone`、`git init`，也不要运行 `git push --dry-run` 来"检查"，因为不在仓库内时它必然报 `not a git repository`，这不是权限问题。
   - **方式 A（已在检出仓库内）**：使用 `git`。只暂存输出文件（`git add <文件路径>`，不用 `git add -A` 或 `git add .`），提交后执行 `git pull --rebase origin main`，再 `git push origin main`。禁止 `--force`。
   - **方式 B（无终端，只有 GitHub 连接器或 API，如 ChatGPT）**：用 API 在 `main` 上创建或更新文件，每个输出文件一次提交。更新已存在的文件时必须带该文件最新的 `sha`。
@@ -44,7 +44,7 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 | 状态 | `state` 为 `open` | 「Issue#N 的状态不是 Open，AI 不能执行此 Issue。」 |
 | 标签 | `labels` 包含 `Todo` | 「Issue#N 缺少 Todo 标签，必须存在 Todo 标签，否则 AI 不能执行此 Issue。」 |
 | 重复执行 | 不含 `Done` 标签 | 「Issue#N 已带有 Done 标签，请确认是否需要重新执行。」 |
-| 写入权限 | 仅方式 A 才运行 `git push --dry-run origin main`（须成功）。方式 B 不运行任何 `git` 命令：读取仓库信息，`permissions.push` 为 true；连接器不返回该字段时跳过此项，以步骤 4 的实际写入结果为准 | 「无法确认对 main 的写权限（具体报错：…），AI 不能执行 Issue#N。」 |
+| 写入权限 | 仅方式 A 才运行 `git push --dry-run origin main`（须成功）。方式 B 不做独立的权限检查，不运行任何 `git` 命令，以步骤 4 实际写入的结果为准 | 「无法确认对 main 的写权限（具体报错：…），AI 不能执行 Issue#N。」 |
 
 ### 步骤 2：理解 Issue
 
@@ -70,8 +70,8 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 
 1. 严格按「要求」和其引用的 skill 完成任务（例如 readme 类 Issue 按 `readme_generation.md`，包括其中的自检与报告）。
 2. 只在「要求」指定的路径下创建或修改文件；目标目录不存在时按要求先创建。
-3. 执行过程中途发现无法继续或出现疑问，回到**步骤 3**，并保证不留下半成品（已创建的文件需向用户说明）。
-4. 文件生成并通过 skill 自检后，**立即写入 `main`**：
+3. 执行过程中途发现无法继续或出现疑问，回到**步骤 3**，并保证不留下半成品（已创建的文件需向用户说明）。下一条所说的检查点写入的 `readme.json` 除外：它是合法的中间状态，只需在报告中说明。
+4. 文件生成并通过 skill 自检后，**立即写入 `main`**。对 readme 这类「先 json 后 md」的任务，`readme.json` 通过 schema 校验后就立即写入 `main`（检查点），然后再继续生成并写入 `readme.md`。检查点写入后即使本次运行中断，下一次运行会按 `readme_generation.md` 第 4 节的「续做」从渲染 md 开始，不必重做分析。写入方式：
    - **方式 A（git）**：
      1. `git status`，确认变更只包含「要求」指定的输出文件。
      2. 只暂存这些文件并提交，提交信息按第 3 节的格式。
@@ -82,7 +82,7 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
      1. 读取 `main` 上目标路径的当前状态（不存在，或取得其 `sha`）。
      2. 按顺序写入：先 `readme.json`，后 `readme.md`（md 依据 json 渲染）。每个文件一次提交，提交信息按第 3 节的格式。
      3. 遇到冲突或 `sha` 不匹配（409 / 422）时，重新读取后只重试一次。
-     4. 全部写入后，从 `main` 读回每个文件，与本地内容逐一比对一致。
+     4. 全部写入后，从 `main` 读回每个文件，与本地内容逐一比对一致。如果写入的响应里返回了文件的 blob `sha`，且与本地计算的 blob SHA（`sha1("blob <字节数>\0" + 内容)`）一致，可以免去该文件的读回。
    - 任何一种方式在重试后仍失败：回到**步骤 3**，不修改 Issue，向用户报告具体报错。方式 B 中若部分文件已写入（例如 `readme.json` 已写入而 `readme.md` 失败），必须在报告中逐个写明哪些文件已在 `main` 上、哪些没有。
 5. **"没做完"不是跳过的理由。** 跳过只适用于步骤 2 列出的情形。不得以"尚未完成校验""不能安全提交"之类的说法停止：继续执行，直到完成，或遇到一个具体、可复述的错误（某个命令或 API 调用及其完整输出）。生成文件、校验和写入之间不输出进度汇报，也不重复读取已读过的规范文件。
 6. 如果确实无法在本次运行内完成，报告必须写明：已完成到哪一步、卡在哪个具体操作（附命令或调用及其输出）、受到什么限制（时间、步数、上下文，能确认才写）。不得只写"未完成"。
@@ -108,6 +108,8 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 3. **删除标签 `Todo`**：只删除 `Todo`，保留 Issue 上的其他标签。
 4. 更新后重新读取 Issue，确认：checkbox 全部为 `[x]`、含 `Done`、不含 `Todo`。
 
+为减少调用次数，步骤 1 到 3 可以合并成一次 `PATCH /repos/{owner}/{repo}/issues/{n}`，同时提交新的 `body` 和完整的 `labels` 数组（原有标签去掉 `Todo`，加上 `Done`，其他标签保留）。仓库中已存在 `Done` 标签时不必先创建。
+
 更新 Issue 的任何一步失败时：文件已在 `main` 上，不回滚。停止后续步骤，向用户报告提交哈希、已完成的 Issue 更新和失败的那一步（附具体报错），由用户决定如何处理。
 
 ### 步骤 7：报告
@@ -129,3 +131,4 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 6. 只写入「要求」指定的输出文件；不创建分支或 PR，不强制覆盖他人的提交（方式 A 禁止 `--force`，方式 B 更新文件必须带最新 `sha`）。
 7. 写入失败或无法确认写入成功，视为执行失败，不修改 Issue。
 8. 一次运行成功执行一个 Issue 后就停止；某个 Issue 失败后，除非用户明确要求尝试下一个，否则不要去处理其他 Issue。
+9. 运行有调用次数或时间限制时，优先保证主线完成：不做规范以外的额外核对（Issue 已附文件清单时不必再核对目录树，不必单独检查权限），不重复读取已读过的文件。
