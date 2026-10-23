@@ -25,8 +25,9 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 
 - 读取与修改 Issue 使用 **REST API**（`gh api repos/{owner}/{repo}/issues/{n} ...`，或 GitHub 连接器提供的等价 API）。GraphQL 在 Claude Code 会话中不可用，`gh issue view` / `gh issue edit` 可能因此失败。
 - 修改 Issue 前，先重新读取最新状态，避免覆盖他人的改动。
-- 写入 `main` 的方式按环境选择，两种等价，**不要求一定有 `git` 命令行**：
-  - **方式 A（有终端）**：使用 `git`。只暂存输出文件（`git add <文件路径>`，不用 `git add -A` 或 `git add .`），提交后执行 `git pull --rebase origin main`，再 `git push origin main`。禁止 `--force`。
+- 每次执行都必须从 `main` 分支读取本文件的最新内容，不使用此前对话中读到或记住的旧版本；报告开头写出本文件在 `main` 上最近一次提交的 SHA（前 7 位）。
+- 写入 `main` 的方式按环境选择，两种等价，**不要求一定有 `git` 命令行**。选择规则：**当前工作目录已经是 `blackif/demo2` 的 git 检出仓库，并且 `git remote get-url origin` 指向该仓库时才用方式 A；其他情况（不在 git 仓库内、没有 `git` 命令、只有 GitHub 连接器）一律用方式 B**。不要为了使用方式 A 而去 `git clone`、`git init`，也不要运行 `git push --dry-run` 来"检查"，因为不在仓库内时它必然报 `not a git repository`，这不是权限问题。
+  - **方式 A（已在检出仓库内）**：使用 `git`。只暂存输出文件（`git add <文件路径>`，不用 `git add -A` 或 `git add .`），提交后执行 `git pull --rebase origin main`，再 `git push origin main`。禁止 `--force`。
   - **方式 B（无终端，只有 GitHub 连接器或 API，如 ChatGPT）**：用 API 在 `main` 上创建或更新文件，每个输出文件一次提交。更新已存在的文件时必须带该文件最新的 `sha`。
 - 无论哪种方式，都必须先在本地或沙箱中生成文件并通过校验（schema 校验、skill 自检），**之后**才写入 `main`。
 - 不得为探测权限而创建、删除临时文件或临时提交，避免污染 `main` 的历史。
@@ -43,7 +44,7 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 | 状态 | `state` 为 `open` | 「Issue#N 的状态不是 Open，AI 不能执行此 Issue。」 |
 | 标签 | `labels` 包含 `Todo` | 「Issue#N 缺少 Todo 标签，必须存在 Todo 标签，否则 AI 不能执行此 Issue。」 |
 | 重复执行 | 不含 `Done` 标签 | 「Issue#N 已带有 Done 标签，请确认是否需要重新执行。」 |
-| 写入权限 | 方式 A：`git push --dry-run origin main` 成功。方式 B：读取仓库信息，`permissions.push` 为 true；连接器不返回该字段时跳过此项，以步骤 4 的实际写入结果为准 | 「无法确认对 main 的写权限（具体报错：…），AI 不能执行 Issue#N。」 |
+| 写入权限 | 仅方式 A 才运行 `git push --dry-run origin main`（须成功）。方式 B 不运行任何 `git` 命令：读取仓库信息，`permissions.push` 为 true；连接器不返回该字段时跳过此项，以步骤 4 的实际写入结果为准 | 「无法确认对 main 的写权限（具体报错：…），AI 不能执行 Issue#N。」 |
 
 ### 步骤 2：理解 Issue
 
