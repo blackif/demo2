@@ -98,11 +98,22 @@ jobs:
           target = f"sap/zpack/{name}"
           doc = f"{target}/document"
 
+          # 程序包内除 document/ 以外的全部文件（Issue 创建时的快照）
+          pkg_files = []
+          for root, dirs, fnames in os.walk(target):
+              if root == target:
+                  dirs[:] = [d for d in dirs if d != "document"]
+              dirs.sort()
+              for fname in sorted(fnames):
+                  pkg_files.append(os.path.join(root, fname).replace(os.sep, "/"))
+
           task = f"为 `{target}` 创建 readme 文件（`readme.json` 与 `readme.md`）。"
           requirement = "\n".join([
               f"- 必须参考 skill：[{issue_skill}]({base}/blob/main/{issue_skill})",
               f"- 必须参考 skill：[{skill}]({base}/blob/main/{skill})",
               f"- 目标目录：[{target}]({base}/tree/main/{target})",
+              f"- 程序包文件清单（Issue 创建时的快照，共 {len(pkg_files)} 个，须全部读取；可按路径逐个读取，无需自行枚举目录）：",
+              *[f"  - `{p}`" for p in pkg_files],
               "- 输出文件：",
               f"  - `{doc}/readme.json`",
               f"  - `{doc}/readme.md`",
@@ -112,6 +123,7 @@ jobs:
               "- [ ] 已按 readme_generation.md 的规则生成 `readme.json`",
               "- [ ] 已按 readme_generation.md 的规则生成 `readme.md`",
               f"- [ ] 两个文件均位于 `{doc}/` 下",
+              f"- [ ] `readme.json` 的 `files` 覆盖上述清单中的全部 {len(pkg_files)} 个文件",
               "- [ ] `readme.json` 已通过 `readme.schema.json` 校验，且已满足 readme_generation.md 第 9 节的自检清单",
               "- [ ] 两个文件已提交并推送到 `main` 分支",
           ])
