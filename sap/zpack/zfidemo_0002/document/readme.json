@@ -208,38 +208,7 @@
       "出力範囲：各ビューで明示された項目のみを公開し、更新処理は定義されていない。",
       "請求サマリヘッダ：ZI_FI_InvSummaryHeader では会社コードと請求サマリ番号の組合せに対して distinct を適用する。"
     ],
-    "dependencies": [
-      {
-        "objectName": "ZC_FI_CustInvoiceSum",
-        "objectType": "CDS View Entity（消費ビュー）",
-        "purpose": "ZI_FI_CustInvoiceSum の結果を消費ビューとして公開する。"
-      },
-      {
-        "objectName": "ZC_FI_InvSummaryHeader",
-        "objectType": "CDS View Entity（消費ビュー）",
-        "purpose": "請求サマリヘッダの項目を値ヘルプ用ビューとして公開する。"
-      },
-      {
-        "objectName": "ZI_FI_CustInvoiceSum",
-        "objectType": "CDS View Entity",
-        "purpose": "階層データと得意先マスタを結合した得意先サマリを提供する。"
-      },
-      {
-        "objectName": "ZI_FI_Customer",
-        "objectType": "CDS View Entity",
-        "purpose": "得意先コードと得意先名を提供する。"
-      },
-      {
-        "objectName": "ZI_FI_InvSummaryHeader",
-        "objectType": "CDS View Entity",
-        "purpose": "請求サマリヘッダの会社コードと請求サマリ番号を提供する。"
-      },
-      {
-        "objectName": "ZI_FI_InvcSumHierarch",
-        "objectType": "CDS View Entity",
-        "purpose": "会社コード・得意先・請求サマリ役割を提供する。"
-      }
-    ],
+    "dependencies": [],
     "publicApis": [
       {
         "apiName": "I_Customer",
@@ -255,6 +224,26 @@
         "apiName": "isjpinvsumhd",
         "apiType": "データベーステーブル（CDS参照元）",
         "purpose": "請求サマリヘッダの会社コードと請求サマリ番号の参照元。"
+      },
+      {
+        "apiName": "ZI_FI_CustInvoiceSum",
+        "apiType": "独自CDS View Entity",
+        "purpose": "得意先サマリを生成し、消費ビューに公開する。"
+      },
+      {
+        "apiName": "ZI_FI_Customer",
+        "apiType": "独自CDS View Entity",
+        "purpose": "得意先コードと得意先名を提供する。"
+      },
+      {
+        "apiName": "ZI_FI_InvSummaryHeader",
+        "apiType": "独自CDS View Entity",
+        "purpose": "請求サマリヘッダ項目を消費ビューに提供する。"
+      },
+      {
+        "apiName": "ZI_FI_InvcSumHierarch",
+        "apiType": "独自CDS View Entity",
+        "purpose": "請求サマリ階層データを提供する。"
       }
     ],
     "messages": [],
