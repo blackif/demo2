@@ -112,6 +112,8 @@ jobs:
               "- [ ] 已按 readme_generation.md 的规则生成 `readme.json`",
               "- [ ] 已按 readme_generation.md 的规则生成 `readme.md`",
               f"- [ ] 两个文件均位于 `{doc}/` 下",
+              "- [ ] `readme.json` 已通过 `readme.schema.json` 校验，且已满足 readme_generation.md 第 9 节的自检清单",
+              "- [ ] 两个文件已提交并推送到 `main` 分支",
           ])
 
           body = (

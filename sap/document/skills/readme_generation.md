@@ -12,12 +12,12 @@
 
 | 项目 | 内容 |
 |---|---|
-| 输入 | 程序包路径（如 `sap/zfi/zfidemo_0001`）；可选：输出语言（默认 `ja`） |
+| 输入 | 程序包路径（如 `sap/zpack/zfidemo_0001`）；可选：输出语言（默认 `ja`） |
 | 模板 | `sap/document/template/readme_ja.md` |
 | Schema | `sap/document/template/readme.schema.json` |
 | 输出 | `<程序包>/document/readme.json`、`<程序包>/document/readme.md` |
 
-调用示例：「按 sap/document/skills/readme_generation.md，为 sap/zfi/zfidemo_0001 生成 readme」。
+调用示例：「按 sap/document/skills/readme_generation.md，为 sap/zpack/zfidemo_0001 生成 readme」。
 
 ## 3. 基本原则
 
