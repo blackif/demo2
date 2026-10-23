@@ -7,8 +7,9 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 
 - 目的：让 AI 正确地接手并完成一个指定的 Issue，并把结果准确地反映到 Issue 上。
 - 一次只处理用户指定的那一个 Issue（编号由用户给出），不自行挑选或批量处理其他 Issue。
-- 产出物（「要求」指定的输出文件）完成并验证后，由 AI **直接提交并推送到 `main` 分支**，不创建新分支，不创建 PR。原因：`check_document` Action 只检查 `main` 上的文件，文件不在 `main` 上就不算完成。
-- 不做：修改 Issue 标题；关闭 Issue（除非用户另行要求）；处理 Issue 正文「要求」范围之外的文件；推送输出文件以外的任何变更。
+- 产出物（「要求」指定的输出文件）完成并验证后，由 AI **直接提交到 `main` 分支**（用 `git push` 或 GitHub API 均可，见第 3 节），不创建新分支，不创建 PR。原因：`check_document` Action 只检查 `main` 上的文件，文件不在 `main` 上就不算完成。
+- 定时任务等无人值守的环境无法向用户提问：遇到无法执行或有疑问的情形，按步骤 3 跳过并写入报告，不等待回复。
+- 不做：修改 Issue 标题；关闭 Issue（除非用户另行要求）；处理 Issue 正文「要求」范围之外的文件；写入输出文件以外的任何变更。
 
 ## 2. 输入
 
@@ -22,11 +23,13 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 
 ## 3. 工具使用
 
-- 读取与修改 Issue 使用 **REST API**（`gh api repos/{owner}/{repo}/issues/{n} ...`）。GraphQL 在 Claude Code 会话中不可用，`gh issue view` / `gh issue edit` 可能因此失败。
+- 读取与修改 Issue 使用 **REST API**（`gh api repos/{owner}/{repo}/issues/{n} ...`，或 GitHub 连接器提供的等价 API）。GraphQL 在 Claude Code 会话中不可用，`gh issue view` / `gh issue edit` 可能因此失败。
 - 修改 Issue 前，先重新读取最新状态，避免覆盖他人的改动。
-- 提交与推送使用 `git`，需要仓库的写权限（会话须以 push 方式接入仓库）。
-- 提交只暂存输出文件（`git add <文件路径>`），不使用 `git add -A` 或 `git add .`。
-- 推送命令为 `git push origin main`，禁止使用 `--force`。
+- 写入 `main` 的方式按环境选择，两种等价，**不要求一定有 `git` 命令行**：
+  - **方式 A（有终端）**：使用 `git`。只暂存输出文件（`git add <文件路径>`，不用 `git add -A` 或 `git add .`），提交后执行 `git pull --rebase origin main`，再 `git push origin main`。禁止 `--force`。
+  - **方式 B（无终端，只有 GitHub 连接器或 API，如 ChatGPT）**：用 API 在 `main` 上创建或更新文件，每个输出文件一次提交。更新已存在的文件时必须带该文件最新的 `sha`。
+- 无论哪种方式，都必须先在本地或沙箱中生成文件并通过校验（schema 校验、skill 自检），**之后**才写入 `main`。
+- 不得为探测权限而创建、删除临时文件或临时提交，避免污染 `main` 的历史。
 - 提交信息格式：`docs: add readme for <程序包名> (Issue#N)`。其他类型的 Issue 把 `add readme for <程序包名>` 换成对应的简短描述。
 
 ## 4. 执行流程
@@ -40,7 +43,7 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 | 状态 | `state` 为 `open` | 「Issue#N 的状态不是 Open，AI 不能执行此 Issue。」 |
 | 标签 | `labels` 包含 `Todo` | 「Issue#N 缺少 Todo 标签，必须存在 Todo 标签，否则 AI 不能执行此 Issue。」 |
 | 重复执行 | 不含 `Done` 标签 | 「Issue#N 已带有 Done 标签，请确认是否需要重新执行。」 |
-| 推送权限 | `git push --dry-run origin main` 成功 | 「无法向 main 推送（具体报错：…），AI 不能执行 Issue#N。请确认仓库已以 push 方式接入。」 |
+| 写入权限 | 方式 A：`git push --dry-run origin main` 成功。方式 B：读取仓库信息，`permissions.push` 为 true；连接器不返回该字段时跳过此项，以步骤 4 的实际写入结果为准 | 「无法确认对 main 的写权限（具体报错：…），AI 不能执行 Issue#N。」 |
 
 ### 步骤 2：理解 Issue
 
@@ -55,24 +58,31 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 
 ### 步骤 3：无法执行或有疑问时 → 跳过
 
-1. **跳过此 Issue**：不执行任何任务、不创建或修改目标文件、不推送。
+1. **跳过此 Issue**：不执行任何任务、不创建或修改目标文件、不写入 `main`。
 2. **不修改 Issue**：不勾选 checkbox，不增删标签（保持 `Todo`），不关闭。
 3. **返回消息**给用户，包含：
    - Issue 编号和标题。
-   - 跳过的原因（具体指出是哪一条要求不明确、哪个文件缺失、哪条命令报了什么错等）。
+   - 跳过的原因（具体指出是哪一条要求不明确、哪个文件缺失、哪个操作报了什么错等）。
    - 需要用户确认或补充什么，才能继续执行。
 
-### 步骤 4：可以执行 → 执行任务并推送
+### 步骤 4：可以执行 → 执行任务并写入 main
 
 1. 严格按「要求」和其引用的 skill 完成任务（例如 readme 类 Issue 按 `readme_generation.md`，包括其中的自检与报告）。
 2. 只在「要求」指定的路径下创建或修改文件；目标目录不存在时按要求先创建。
 3. 执行过程中途发现无法继续或出现疑问，回到**步骤 3**，并保证不留下半成品（已创建的文件需向用户说明）。
-4. 文件生成并通过 skill 自检后，**立即提交并推送到 `main`**：
-   1. `git status`，确认变更只包含「要求」指定的输出文件。
-   2. 只暂存这些文件并提交，提交信息按第 3 节的格式。
-   3. `git pull --rebase origin main`，然后 `git push origin main`。
-   4. 推送被拒绝时，重新 `git pull --rebase origin main` 后只重试一次。仍失败，或 rebase 出现冲突，回到**步骤 3**：不修改 Issue，向用户报告具体报错，并说明本地已有的提交。
-   5. 推送成功后执行 `git fetch origin main`，用 `git cat-file -e origin/main:<文件路径>` 逐个确认输出文件已在远端 `main` 上。
+4. 文件生成并通过 skill 自检后，**立即写入 `main`**：
+   - **方式 A（git）**：
+     1. `git status`，确认变更只包含「要求」指定的输出文件。
+     2. 只暂存这些文件并提交，提交信息按第 3 节的格式。
+     3. `git pull --rebase origin main`，然后 `git push origin main`。
+     4. 推送被拒绝时，重新 `git pull --rebase origin main` 后只重试一次。
+     5. 推送成功后 `git fetch origin main`，用 `git cat-file -e origin/main:<文件路径>` 逐个确认输出文件已在远端 `main` 上。
+   - **方式 B（API）**：
+     1. 读取 `main` 上目标路径的当前状态（不存在，或取得其 `sha`）。
+     2. 按顺序写入：先 `readme.json`，后 `readme.md`（md 依据 json 渲染）。每个文件一次提交，提交信息按第 3 节的格式。
+     3. 遇到冲突或 `sha` 不匹配（409 / 422）时，重新读取后只重试一次。
+     4. 全部写入后，从 `main` 读回每个文件，与本地内容逐一比对一致。
+   - 任何一种方式在重试后仍失败：回到**步骤 3**，不修改 Issue，向用户报告具体报错。方式 B 中若部分文件已写入（例如 `readme.json` 已写入而 `readme.md` 失败），必须在报告中逐个写明哪些文件已在 `main` 上、哪些没有。
 
 ### 步骤 5：逐条核对验收条件
 
@@ -81,10 +91,10 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 除 Issue 的验收条件外，还须核对以下两项（它们不一定写在 Issue 里，但同样是完成的条件）：
 
 - 引用 skill 的自检清单全部满足（readme 类 Issue 见 `readme_generation.md` 第 9 节）。
-- 输出文件已在**远端** `main` 上（以 `origin/main` 的读取结果为准，不能只看本地文件）。
+- 输出文件已在**远端** `main` 上（以从 `main` 读回的内容为准，不能只看本地文件）。
 
 - 全部满足 → 进入步骤 6。
-- 有任何一条不满足 → 视同执行失败：**不勾选、不改标签**，按步骤 3 的格式返回消息，说明哪一条没有满足及原因。已推送的提交不回滚，报告中写明提交哈希。
+- 有任何一条不满足 → 视同执行失败：**不勾选、不改标签**，按步骤 3 的格式返回消息，说明哪一条没有满足及原因。已写入 `main` 的提交不回滚，报告中写明提交哈希。
 
 ### 步骤 6：全部成功 → 更新 Issue
 
@@ -102,16 +112,16 @@ Issue 的具体任务内容（如生成 readme）由 Issue 正文「要求」中
 向用户简短报告（不要把生成的文件内容贴回对话）：
 
 - 执行结果：成功 / 跳过 / 失败，以及 Issue 编号。
-- 成功时：创建或修改了哪些文件；提交哈希和推送目标（`main`）；Issue 上做了哪些更新（checkbox、标签）。
+- 成功时：创建或修改了哪些文件；提交哈希（方式 B 为各文件的提交 SHA）和写入目标（`main`）；Issue 上做了哪些更新（checkbox、标签）。
 - 执行 skill（如 `readme_generation.md`）要求报告的事项，一并转达。
 - Issue 此时仍为 Open（带 `Done` 标签），等待人工确认后关闭。
 
 ## 5. 约束
 
 1. 标签只认 `Todo` 与 `Done`，不使用其他名称代替。
-2. 状态不明（读取 Issue 失败、API 报错、无法确认推送权限）时，视为前置检查未通过，不执行。
+2. 状态不明（读取 Issue 失败、API 报错、明确得知没有写权限）时，视为前置检查未通过，不执行。
 3. 不修改 Issue 的标题、assignee、milestone，不添加评论（除非用户要求）。
 4. 不关闭 Issue（除非用户要求）。
 5. 不凭猜测补全 Issue 中缺失的信息；有疑问就跳过并询问。
-6. 推送只限「要求」指定的输出文件；不推送其他变更，不创建分支或 PR，不使用 `--force`。
-7. 推送失败或无法确认推送成功，视为执行失败，不修改 Issue。
+6. 只写入「要求」指定的输出文件；不创建分支或 PR，不强制覆盖他人的提交（方式 A 禁止 `--force`，方式 B 更新文件必须带最新 `sha`）。
+7. 写入失败或无法确认写入成功，视为执行失败，不修改 Issue。
